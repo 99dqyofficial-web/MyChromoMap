@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromoMap</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <h1>ChromoMap<span class="version">v12.9</span></h1>
+        <div class="header-actions">
+          <button id="langToggle" class="btn-icon-small">EN / 中</button>
+          <span class="arch-badge" id="archBadge">...</span>
+        </div>
+      </div>
+
+      <div class="sidebar-body">
+        <!-- Data Section -->
+        <section class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">📋</span>
+            <span class="panel-title" data-zh="数据输入">Data Input</span>
+            <span class="panel-arrow">▾</span>
+          </div>
+          <div class="panel-body">
+            <div class="field">
+              <label data-zh="基因数据">Gene Data</label>
+              <div class="tab-bar">
+                <button class="tab active" data-tab="gene-text" data-zh="文本粘贴">Paste</button>
+                <button class="tab" data-tab="gene-excel" data-zh="Excel 上传">Excel</button>
+              </div>
+              <div class="tab-content active" id="gene-text">
+                <textarea id="geneInput" rows="5" spellcheck="false" placeholder="Gene ID | Start | End | Chr | Color"></textarea>
+              </div>
+              <div class="tab-content" id="gene-excel">
+                <button class="btn btn-secondary" id="excelBtn">
+                  <span data-zh="上传 Excel">Upload Excel</span>
+                </button>
+                <span id="excelName" class="file-name"></span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label data-zh="染色体长度 (bp)">Chromosome Lengths (bp)</label>
+              <textarea id="chrLenInput" rows="4" spellcheck="false" placeholder="ChrName Length"></textarea>
+            </div>
+
+            <div class="field">
+              <label data-zh="GFF3 文件 (密度热力图)">GFF3 (For Density Heatmap)</label>
+              <button class="btn btn-secondary" id="gffBtn">
+                <span data-zh="选择 GFF3 文件">Select GFF3 File</span>
+              </button>
+              <span id="gffName" class="file-name"></span>
+            </div>
+            
+            <div class="field-row" style="margin-top: 10px;">
+              <button class="btn btn-secondary" id="sampleBtn" style="flex: 1; font-size: 0.75rem;">
+                <span data-zh="加载示例数据">Load Sample Data</span>
+              </button>
+              <button class="btn btn-secondary" id="clearBtn" style="flex: 1; font-size: 0.75rem; margin-left: 8px;">
+                <span data-zh="清除数据">Clear Data</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">⚙️</span>
+            <span class="panel-title" data-zh="视觉设置">Visual Settings</span>
+            <span class="panel-arrow">▾</span>
+          </div>
+          <div class="panel-body">
+            <div class="field-group">
+              <div class="group-label" data-zh="布局">Layout</div>
+              <div class="field-row">
+                <div class="field half">
+                  <label data-zh="每行数量">Chr / Row</label>
+                  <input type="number" id="chrsPerRow" value="10" min="1" max="30">
+                </div>
+                <div class="field half">
+                  <label data-zh="画布宽 (in)">Width (in)</label>
+                  <input type="number" id="figWidth" value="15" min="5" max="40" step="0.5">
+                </div>
+              </div>
+              <div class="field">
+                <label><span data-zh="行高">Row Height</span>: <span id="rowHeightVal">8</span></label>
+                <input type="range" id="rowHeight" min="2" max="20" value="8" step="0.5">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="group-label" data-zh="标尺">Ruler</div>
+              <div class="field">
+                <label><span data-zh="标尺偏移">Ruler Offset</span>: <span id="rulerOffsetVal">0.8</span></label>
+                <input type="range" id="rulerOffset" min="0.1" max="4" value="0.8" step="0.1">
+              </div>
+              <div class="field-row">
+                <div class="field half">
+                  <label data-zh="刻度 (Mb)">Tick (Mb)</label>
+                  <input type="number" id="majorTickInt" value="10" min="1" max="200">
+                </div>
+                <div class="field half">
+                  <label><span data-zh="刻度长">Tick Len</span>: <span id="tickLineLenVal">0.2</span></label>
+                  <input type="range" id="tickLineLen" min="0.05" max="0.5" value="0.2" step="0.05">
+                </div>
+              </div>
+              <div class="field">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="showMinor" checked>
+                  <span data-zh="显示次刻度">Show minor ticks</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="group-label" data-zh="密度">Density</div>
+              <div class="field">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="useDensity">
+                  <span data-zh="启用密度着色">Enable density coloring</span>
+                </label>
+              </div>
+              <div id="densityOptions" class="hidden">
+                <div class="field-row">
+                  <div class="field half">
+                    <label data-zh="窗口 (Mb)">Window (Mb)</label>
+                    <select id="windowSize">
+                      <option value="0.1">0.1</option>
+                      <option value="0.5">0.5</option>
+                      <option value="1.0" selected>1.0</option>
+                      <option value="2.0">2.0</option>
+                    </select>
+                  </div>
+                  <div class="field half">
+                    <label data-zh="色系">Colormap</label>
+                    <select id="colormap">
+                      <option value="Mako">Mako</option>
+                      <option value="Grayscale_Print" selected>Grayscale</option>
+                      <option value="Reds">Reds</option>
+                      <option value="viridis">Viridis</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="group-label" data-zh="标签">Labels</div>
+              <div class="field-row">
+                <div class="field half">
+                  <label><span data-zh="染色体宽">Chr Width</span>: <span id="chrWidthVal">0.4</span></label>
+                  <input type="range" id="chrWidth" min="0.1" max="1" value="0.4" step="0.05">
+                </div>
+                <div class="field half">
+                  <label><span data-zh="标签间距">Label Gap</span>: <span id="labelSpacingVal">1.2</span></label>
+                  <input type="range" id="labelSpacing" min="0.1" max="5" value="1.2" step="0.1">
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field half">
+                  <label><span data-zh="字号">Font Size</span>: <span id="fontSizeVal">10</span></label>
+                  <input type="range" id="fontSize" min="6" max="20" value="10">
+                </div>
+                <div class="field half">
+                  <label data-zh="颜色">Color</label>
+                  <input type="color" id="labelColor" value="#000000">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-primary" id="generateBtn">
+          <span data-zh="生成图谱">Run Analysis</span>
+        </button>
+        <div class="export-row hidden" id="exportRow">
+          <button class="btn btn-export" data-fmt="png">PNG</button>
+          <button class="btn btn-export" data-fmt="svg">SVG</button>
+          <button class="btn btn-export" data-fmt="pdf">PDF</button>
+        </div>
+      </div>
+    </aside>
+
+    <main id="content">
+      <div id="emptyState">
+        <div class="empty-icon">🧬</div>
+        <div class="empty-title" data-zh="准备就绪">Ready for discovery</div>
+        <div class="empty-sub" data-zh="在左侧配置您的基因数据，然后点击 生成图谱 以生成染色体物理图谱。">Configure your genomic data in the sidebar and click <b>Run Analysis</b> to generate the chromosome physical map.</div>
+      </div>
+      <div id="plotContainer" class="hidden">
+        <img id="plotImage" alt="Chromosome Map">
+        <div id="loadingOverlay" class="hidden">
+          <div class="spinner"></div>
+          <span data-zh="正在处理数据...">Processing Data...</span>
+        </div>
+      </div>
+      <div id="errorToast" class="hidden"></div>
+    </main>
+  </div>
+  <script src="tauri-shim.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

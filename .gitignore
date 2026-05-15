@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.dmg
+python/portable/
+src-tauri/target/
+.DS_Store
+__pycache__/
+*.pyc

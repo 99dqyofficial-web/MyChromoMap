@@ -1,0 +1,21 @@
+{
+  "name": "chromomap",
+  "version": "1.0.0",
+  "description": "染色体物理图谱 ChromoMap - 独立桌面应用",
+  "private": true,
+  "scripts": {
+    "dev": "serve renderer/ -l 3000 --no-clipboard & tauri dev",
+    "build:mac": "bash scripts/build-python.sh && npx tauri build --target aarch64-apple-darwin"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "esbuild": "^0.28.0",
+    "serve": "^14"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-shell": "^2.3.5"
+  }
+}
