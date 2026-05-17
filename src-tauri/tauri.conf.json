@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "identifier": "com.chromomap.app",
   "build": {
-    "frontendDist": "../renderer",
-    "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "",
-    "beforeDevCommand": ""
+    "frontendDist": "../renderer/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build --prefix renderer",
+    "beforeDevCommand": "npm run dev --prefix renderer"
   },
   "app": {
     "windows": [

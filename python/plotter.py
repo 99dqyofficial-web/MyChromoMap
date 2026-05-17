@@ -176,8 +176,9 @@ def plot_chromomap(genes, l_dict, d_map, d_norm, d_cmap, settings):
                 c_gs['y'] = c_gs['Start'] / 1e6
                 c_gs['ly'] = avoid_collisions(c_gs['y'].tolist(), label_spacing)
                 for _, row in c_gs.iterrows():
-                    color = (row['Color'] if 'Color' in row
-                             and pd.notna(row['Color']) else "#FF0000")
+                    color = row.get('Color', '')
+                    if not color or pd.isna(color):
+                        color = "#FF0000"
                     ax.plot([x - chr_width / 2, x + chr_width / 2],
                             [row['y'], row['y']], color=color, lw=2, zorder=2)
                     ax.plot([x + chr_width / 2, x + chr_width / 2 + 0.1],

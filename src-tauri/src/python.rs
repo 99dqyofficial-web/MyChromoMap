@@ -74,13 +74,18 @@ pub fn run(params: &str) -> Result<String, String> {
         .wait_with_output()
         .map_err(|e| format!("Process error: {}", e))?;
 
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
     if output.status.success() {
-        let stdout =
-            String::from_utf8_lossy(&output.stdout).to_string();
         Ok(stdout)
     } else {
-        let stderr =
-            String::from_utf8_lossy(&output.stderr).to_string();
-        Err(stderr)
+        if !stderr.is_empty() {
+            Err(stderr)
+        } else if !stdout.is_empty() {
+            Err(stdout)
+        } else {
+            Err("Python process failed with no output".to_string())
+        }
     }
 }

@@ -68,5 +68,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        print(json.dumps({'error': str(e), 'traceback': traceback.format_exc()}))
+        print(json.dumps({'error': str(e), 'traceback': traceback.format_exc()}), file=sys.stderr)
         sys.exit(1)

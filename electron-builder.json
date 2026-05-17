@@ -1,0 +1,37 @@
+{
+  "appId": "com.chromomap.app",
+  "productName": "ChromoMap",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "python",
+      "to": "python",
+      "filter": ["**/*", "!**/__pycache__/**/*", "!**/*.pyc"]
+    }
+  ],
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["arm64", "x64"]
+      }
+    ],
+    "category": "public.app-category.utilities",
+    "icon": "icons/icon.icns"
+  },
+  "win": {
+    "target": ["nsis"],
+    "icon": "icons/icon.ico"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "icon": "icons/icon.png",
+    "category": "Utility"
+  }
+}
