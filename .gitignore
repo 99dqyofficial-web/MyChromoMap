@@ -4,14 +4,7 @@ dist-electron/
 release/
 *.dmg
 python/portable/
-src-tauri/target/
 .DS_Store
 __pycache__/
 *.pyc
-.gemini/
-.deepseek/
-Design.md
-ollama.md
-file_list.txt
 Gmax_*
-test_*
