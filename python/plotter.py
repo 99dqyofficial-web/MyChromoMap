@@ -21,8 +21,8 @@ def _register_fonts():
 
     base = os.path.join(os.path.dirname(__file__), 'fonts')
     candidates = [
-        'times.ttf', 'timesbd.ttf', 'timesbi.ttf', 'timesi.ttf',
-        'NotoSerifCJKsc-Regular.otf', 'NotoSansCJKsc-Regular.otf',
+        'NotoSerifCJKsc-Regular.otf',
+        'NotoSansCJKsc-Regular.otf',
     ]
     for name in candidates:
         p = os.path.join(base, name)
@@ -30,8 +30,8 @@ def _register_fonts():
             fm.fontManager.addfont(p)
 
     plt.rcParams['font.family'] = 'serif'
-    plt.rcParams['font.serif'] = ['Times New Roman', 'Noto Serif CJK SC']
-    plt.rcParams['font.sans-serif'] = ['Arial', 'Noto Sans CJK SC']
+    plt.rcParams['font.serif'] = ['Noto Serif CJK SC', 'DejaVu Serif']
+    plt.rcParams['font.sans-serif'] = ['Noto Sans CJK SC', 'DejaVu Sans']
     plt.rcParams['mathtext.fontset'] = 'stix'
     plt.rcParams['axes.unicode_minus'] = False
     plt.rcParams['svg.fonttype'] = 'none'
@@ -45,12 +45,53 @@ def register_custom_colormaps():
         "Mako", ['#e3f7e3', '#BAE6E1', '#91D5DE'])
     gray_cmap = mcolors.LinearSegmentedColormap.from_list(
         "Grayscale_Print", ['#F8F8F8', '#969696', '#000000'])
-    for name, cmap in [("Mako", mako_cmap), ("Grayscale_Print", gray_cmap)]:
+    blues_cmap = mcolors.LinearSegmentedColormap.from_list(
+        "Blues", ['#08306b', '#2171b5', '#6baed6', '#c6dbef'])
+    
+    # 使用 matplotlib 内置色系
+    builtin_cmaps = [
+        "YlOrRd", "Oranges", "Greens", "Purples", 
+        "cividis", "turbo", "hot", "YlGnBu"
+    ]
+    
+    for name in builtin_cmaps:
+        if name not in plt.colormaps:
+            plt.colormaps.register(cmap=plt.colormaps[name], name=name)
+    
+    # 注册自定义色系
+    for name, cmap in [("Mako", mako_cmap), ("Grayscale_Print", gray_cmap), ("Blues", blues_cmap)]:
         if name not in plt.colormaps:
             plt.colormaps.register(cmap=cmap, name=name)
 
 
 register_custom_colormaps()
+
+
+def _parse_chr_num(name):
+    """Extract chromosome number from various naming conventions.
+    Handles: Chr01, Chr1, glyma.Wm82.gnm6.Gm01, Gm01, 1, etc."""
+    m = re.search(r'(?:Chr|Gm|chr|gnm\d+\.)?0*(\d+)$', name)
+    return int(m.group(1)) if m else None
+
+
+def _build_seqid_map(gff_seqids, chr_keys):
+    """Build a mapping from chr_keys -> best-matching GFF seqid.
+    Tries direct match first, then numeric match."""
+    direct = set(chr_keys) & set(gff_seqids)
+    if direct:
+        return {k: k for k in direct}
+
+    mapping = {}
+    chr_nums = {k: _parse_chr_num(k) for k in chr_keys}
+    gff_nums = {s: _parse_chr_num(s) for s in gff_seqids}
+    for chr_name, cn in chr_nums.items():
+        if cn is None:
+            continue
+        for seqid, sn in gff_nums.items():
+            if sn == cn:
+                mapping[chr_name] = seqid
+                break
+    return mapping
 
 
 def calculate_windowed_density(gff_buffer, len_dict_bp, window_size_bp):
@@ -61,13 +102,20 @@ def calculate_windowed_density(gff_buffer, len_dict_bp, window_size_bp):
                               header=None, names=gff_cols,
                               dtype={'seqid': str}, on_bad_lines='skip')
         df_genes = df_gff[df_gff['type'] == 'gene'].copy()
+        if df_genes.empty:
+            return {}, 0.0
         df_genes['midpoint'] = (df_genes['start'] + df_genes['end']) / 2
+
+        gff_seqids = set(df_genes['seqid'].unique())
+        seqid_map = _build_seqid_map(gff_seqids, len_dict_bp.keys())
+
         density_profile_map = {}
         global_max_density = 0.0
         for chr_name, chr_len in len_dict_bp.items():
-            if chr_name not in df_genes['seqid'].unique():
+            seqid = seqid_map.get(chr_name)
+            if seqid is None:
                 continue
-            chr_sub_df = df_genes[df_genes['seqid'] == chr_name]
+            chr_sub_df = df_genes[df_genes['seqid'] == seqid]
             bin_edges = np.arange(0, chr_len + window_size_bp, window_size_bp)
             if bin_edges[-1] < chr_len:
                 bin_edges = np.append(bin_edges, chr_len)
@@ -79,7 +127,7 @@ def calculate_windowed_density(gff_buffer, len_dict_bp, window_size_bp):
             if len(density_values) > 0:
                 global_max_density = max(global_max_density, density_values.max())
         return density_profile_map, global_max_density
-    except Exception:
+    except Exception as e:
         return {}, 0.0
 
 
@@ -118,6 +166,7 @@ def plot_chromomap(genes, l_dict, d_map, d_norm, d_cmap, settings):
     label_spacing = settings.get('label_spacing', 1.2)
     font_size = settings.get('font_size', 10)
     label_color = settings.get('label_color', '#000000')
+    chr_fill_color = settings.get('chr_fill_color', '')
 
     sorted_chrs = sorted(l_dict.keys())
     total_chrs = len(sorted_chrs)
@@ -167,7 +216,7 @@ def plot_chromomap(genes, l_dict, d_map, d_norm, d_cmap, settings):
             ax.add_patch(patches.FancyBboxPatch(
                 (x - chr_width / 2, 0), chr_width, c_len_mb,
                 boxstyle=f"round,pad=0,rounding_size={chr_width / 2}",
-                ec='black', fc='none', lw=1.2, zorder=1))
+                ec='black', fc=chr_fill_color if chr_fill_color else 'none', lw=1.2, zorder=1))
             ax.text(x, -2, name, ha='center',
                     fontweight='bold', fontsize=font_size + 1)
 
@@ -186,6 +235,22 @@ def plot_chromomap(genes, l_dict, d_map, d_norm, d_cmap, settings):
                     ax.text(x + chr_width / 2 + 0.12, row['ly'], row['Gene'],
                             va='center', fontsize=font_size,
                             color=label_color, style='italic')
+
+    # Add colorbar for density legend
+    if use_density_color and d_norm:
+        # Create a ScalarMappable for the colorbar
+        sm = plt.cm.ScalarMappable(cmap=d_cmap, norm=d_norm)
+        sm.set_array([])
+        
+        # Add colorbar to the right of the last axes
+        cbar = fig.colorbar(sm, ax=axes[-1], orientation='vertical', 
+                           fraction=0.02, pad=0.04, shrink=0.8)
+        cbar.set_label('Gene Density (genes/Mb)', fontsize=font_size, 
+                      fontweight='bold')
+        cbar.ax.tick_params(labelsize=font_size - 1)
+        
+        # Add a small title above the colorbar
+        cbar.ax.set_title('Density', fontsize=font_size, fontweight='bold', pad=10)
 
     plt.tight_layout()
     return fig

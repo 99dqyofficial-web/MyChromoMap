@@ -5,7 +5,7 @@
 ## 核心功能
 
 - **数据驱动绘图**：输入基因位置和染色体长度，自动生成物理图谱。
-- **现代化 UI**：采用极简白底黑字设计（Arial 字体），提供如 ChatGPT 般的流畅体验。
+- **现代化 UI**：采用极简白底黑字设计，提供如 ChatGPT 般的流畅体验。
 - **多语言支持**：支持中英文界面一键切换。
 - **多种导入方式**：支持文本粘贴和 Excel (`.xlsx`, `.xls`) / CSV 文件上传。
 - **密度热力图**：支持上传 GFF3 文件并根据基因密度进行热力图着色。
@@ -19,7 +19,7 @@ MyChromoMap/
 ├── renderer/                 # 前端 UI (HTML + CSS + JS) - 现代白底黑字风格
 ├── python/                   # 计算引擎 (Matplotlib 3.10)
 │   ├── main.py              # CLI 入口
-│   ├── plotter.py           # 绘图核心 (Arial + Times New Roman 字体支持)
+│   ├── plotter.py           # 绘图核心 (Noto Sans/Noto Serif + DejaVu 字体支持)
 │   └── fonts/               # 字体包
 ├── src-tauri/                # Tauri/Rust 后端
 └── scripts/                  # 构建脚本 (Python 运行时打包与精简)
@@ -46,7 +46,7 @@ bash scripts/build-python.sh
 ## 交接说明
 
 - **Excel 解析**: 前端将文件路径传给 Python，Python 使用 `pandas.read_excel` 进行解析。
-- **字体管理**: `plotter.py` 已配置优先使用 Arial 和 Times New Roman，如需更改可在 `_register_fonts` 中修改。
+- **字体管理**: `plotter.py` 已配置优先使用 Noto Sans / Noto Serif CJK SC，如需更改可在 `_register_fonts` 中修改。
 - **样式定制**: 侧边栏样式在 `renderer/style.css` 中通过 `!important` 强制定义，确保 UI 统一性。
 - **打包逻辑**: 应用自带便携式 Python 运行时，用户端无需安装任何环境。
 
