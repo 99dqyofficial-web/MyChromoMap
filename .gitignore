@@ -8,3 +8,4 @@ python/portable/
 __pycache__/
 *.pyc
 Gmax_*
+docs/
