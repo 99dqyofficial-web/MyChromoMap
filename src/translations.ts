@@ -37,6 +37,7 @@ export const translations = {
     errChrLen: "Please enter chromosome lengths",
     errGeneData: "Please enter gene data",
     genFailed: "Generation failed",
+    chrFill: "Chr Fill",
   },
   zh: {
     title: "ChromoMap",
@@ -76,6 +77,7 @@ export const translations = {
     errChrLen: "请输入染色体长度",
     errGeneData: "请输入基因数据",
     genFailed: "生成失败",
+    chrFill: "染色体填充",
   },
 }
 

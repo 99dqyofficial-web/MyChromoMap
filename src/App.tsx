@@ -115,10 +115,12 @@ export default function App() {
   const [labelSpacing, setLabelGap] = useState(1.2)
   const [fontSize, setFontSize] = useState(10)
   const [labelColor, setLabelColor] = useState("#000000")
+  const [chrFillColor, setChrFillColor] = useState("")
 
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [plotSrc, setPlotImage] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     setGeneInput(sampleGenes)
@@ -185,7 +187,8 @@ export default function App() {
           chr_width: chrWidth,
           label_spacing: labelSpacing,
           font_size: fontSize,
-          label_color: labelColor
+          label_color: labelColor,
+          chr_fill_color: chrFillColor
         }
       }
 
@@ -201,7 +204,7 @@ export default function App() {
     } finally {
       setIsGenerating(false)
     }
-  }, [lang, geneInput, chrLenInput, excelData, gffData, useDensity, chrsPerRow, figWidth, rowHeight, rulerOffset, majorTickInt, tickLineLen, showMinor, windowSize, colormap, chrWidth, labelSpacing, fontSize, labelColor])
+  }, [lang, geneInput, chrLenInput, excelData, gffData, useDensity, chrsPerRow, figWidth, rowHeight, rulerOffset, majorTickInt, tickLineLen, showMinor, windowSize, colormap, chrWidth, labelSpacing, fontSize, labelColor, chrFillColor])
 
   const handleExcelUpload = async () => {
     const result = await electron.openFile([{ name: 'Excel', extensions: ['xlsx', 'xls'] }])
@@ -301,12 +304,38 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div
+                className="space-y-3"
+                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={async e => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const file = e.dataTransfer.files[0]
+                  if (!file) return
+                  const path = (file as any).path
+                  if (!path) return
+                  const name = path.split('/').pop() || path.split('\\').pop() || "GFF3 File"
+                  const content = await electron.readText(path)
+                  setGffData({ name, content })
+                  setUseDensity(true)
+                }}
+              >
                 <Label className="text-xs font-semibold ml-1 uppercase tracking-wider">{t.gffFile}</Label>
-                <Button variant="outline" className="w-full h-11 gap-3 justify-start px-4 rounded-lg border-border bg-background hover:bg-muted transition-all" onClick={handleGffUpload}>
-                  <FileCode size={16} className="text-muted-foreground" />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">{gffData ? gffData.name : t.selectGff}</span>
-                </Button>
+                <div className={cn(
+                  "relative rounded-lg border-2 border-dashed transition-all",
+                  isDragging ? "border-primary bg-primary/5" : "border-border"
+                )}>
+                  <Button variant="outline" className={cn(
+                    "w-full h-20 gap-2 justify-start px-4 rounded-lg bg-background hover:bg-muted transition-all flex-col items-center",
+                    isDragging && "bg-transparent border-transparent"
+                  )} onClick={handleGffUpload}>
+                    <FileCode size={20} className="text-muted-foreground" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+                      {isDragging ? "Drop GFF3 file here" : (gffData ? gffData.name : t.selectGff)}
+                    </span>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -466,6 +495,15 @@ export default function App() {
                                     <SelectItem value="Mako">Mako</SelectItem>
                                     <SelectItem value="Reds">Reds</SelectItem>
                                     <SelectItem value="viridis">Viridis</SelectItem>
+                                    <SelectItem value="Blues">Blues</SelectItem>
+                                    <SelectItem value="Greens">Greens</SelectItem>
+                                    <SelectItem value="Purples">Purples</SelectItem>
+                                    <SelectItem value="Oranges">Oranges</SelectItem>
+                                    <SelectItem value="YlOrRd">Yellow-Orange-Red</SelectItem>
+                                    <SelectItem value="YlGnBu">Yellow-Green-Blue</SelectItem>
+                                    <SelectItem value="hot">Hot</SelectItem>
+                                    <SelectItem value="turbo">Turbo</SelectItem>
+                                    <SelectItem value="cividis">Cividis</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -530,6 +568,34 @@ export default function App() {
                             <Input type="text" value={labelColor} onChange={e => setLabelColor(e.target.value)} className="h-9 rounded-lg border-border bg-muted focus:bg-background transition-colors text-[10px] font-mono font-bold uppercase tracking-tight" />
                         </div>
                     </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-2">
+                  <Palette size={13} className="text-muted-foreground" />
+                  {t.chrFill}
+                </h3>
+                <div className="flex gap-2">
+                  <div className="relative w-11 h-9 shrink-0">
+                    <Input
+                      type="color"
+                      value={chrFillColor || '#e5e7eb'}
+                      onChange={e => setChrFillColor(e.target.value)}
+                      className="w-full h-full p-0 border-none cursor-pointer rounded-full overflow-hidden absolute inset-0 opacity-0 z-10"
+                    />
+                    <div
+                      className="w-full h-full rounded-full border border-border pointer-events-none"
+                      style={{ backgroundColor: chrFillColor || '#e5e7eb' }}
+                    />
+                  </div>
+                  <Input
+                    type="text"
+                    value={chrFillColor}
+                    onChange={e => setChrFillColor(e.target.value)}
+                    placeholder="#e5e7eb"
+                    className="h-9 rounded-lg border-border bg-muted focus:bg-background transition-colors text-[10px] font-mono font-bold uppercase tracking-tight"
+                  />
                 </div>
               </div>
             </div>

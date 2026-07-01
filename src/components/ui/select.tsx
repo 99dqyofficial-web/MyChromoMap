@@ -22,14 +22,35 @@ interface SelectItemProps {
   children: React.ReactNode
 }
 
+interface SelectItemEntry {
+  value: string
+  label: React.ReactNode
+}
+
 const SelectContext = React.createContext<{
   value: string
   onValueChange: (value: string) => void
-}>({ value: "", onValueChange: () => {} })
+  items: SelectItemEntry[]
+  registerItem: (item: SelectItemEntry) => () => void
+}>({
+  value: "",
+  onValueChange: () => {},
+  items: [],
+  registerItem: () => () => {},
+})
 
 export function Select({ value, onValueChange, children }: SelectProps) {
+  const [items, setItems] = React.useState<SelectItemEntry[]>([])
+
+  const registerItem = React.useCallback((item: SelectItemEntry) => {
+    setItems(prev => [...prev, item])
+    return () => {
+      setItems(prev => prev.filter(i => i.value !== item.value))
+    }
+  }, [])
+
   return (
-    <SelectContext.Provider value={{ value, onValueChange }}>
+    <SelectContext.Provider value={{ value, onValueChange, items, registerItem }}>
       {children}
     </SelectContext.Provider>
   )
@@ -42,11 +63,13 @@ export function SelectTrigger({ children, className }: SelectTriggerProps) {
       value={context.value}
       onChange={(e) => context.onValueChange(e.target.value)}
       className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "flex h-10 w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className
       )}
     >
-      {children}
+      {context.items.map(item => (
+        <option key={item.value} value={item.value}>{item.label}</option>
+      ))}
     </select>
   )
 }
@@ -56,10 +79,17 @@ export function SelectValue() {
   return <>{context.value}</>
 }
 
-export function SelectContent({ children, className }: SelectContentProps) {
+export function SelectContent({ children }: SelectContentProps) {
   return <>{children}</>
 }
 
 export function SelectItem({ value, children }: SelectItemProps) {
-  return <option value={value}>{children}</option>
+  const context = React.useContext(SelectContext)
+
+  React.useEffect(() => {
+    const unregister = context.registerItem({ value, label: children })
+    return unregister
+  }, [value, children])
+
+  return null
 }
